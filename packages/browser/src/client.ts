@@ -22,17 +22,19 @@ export class AirtakeClient {
       this.baseUrl = options.baseUrl;
     }
 
-    const actorId = localStorage.getItem(ACTOR_ID_KEY);
-    const deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (this.localStorageAvailable) {
+      const actorId = localStorage.getItem(ACTOR_ID_KEY);
+      const deviceId = localStorage.getItem(DEVICE_ID_KEY);
 
-    if (actorId) {
-      this.actorId = actorId;
-    }
+      if (actorId) {
+        this.actorId = actorId;
+      }
 
-    if (deviceId) {
-      this.deviceId = deviceId;
-    } else {
-      this.issueDeviceId();
+      if (deviceId) {
+        this.deviceId = deviceId;
+      } else {
+        this.issueDeviceId();
+      }
     }
   }
 
@@ -59,7 +61,10 @@ export class AirtakeClient {
 
   identify(actorId: string | number, props?: Props) {
     this.actorId = actorId;
-    localStorage.setItem(ACTOR_ID_KEY, actorId.toString());
+
+    if (this.localStorageAvailable) {
+      localStorage.setItem(ACTOR_ID_KEY, actorId.toString());
+    }
 
     this.request({
       type: 'identify',
@@ -75,15 +80,13 @@ export class AirtakeClient {
   }
 
   reset() {
-    localStorage.removeItem(ACTOR_ID_KEY);
-    localStorage.removeItem(DEVICE_ID_KEY);
+    if (this.localStorageAvailable) {
+      localStorage.removeItem(ACTOR_ID_KEY);
+      localStorage.removeItem(DEVICE_ID_KEY);
+    }
 
     this.actorId = undefined;
     this.issueDeviceId();
-  }
-
-  private get endpoint() {
-    return `${this.baseUrl}/v1/events`;
   }
 
   private request(body: Record<string, unknown>) {
@@ -105,6 +108,17 @@ export class AirtakeClient {
 
   private issueDeviceId() {
     this.deviceId = `$device:${crypto.randomUUID()}`;
-    localStorage.setItem(DEVICE_ID_KEY, this.deviceId);
+
+    if (this.localStorageAvailable) {
+      localStorage.setItem(DEVICE_ID_KEY, this.deviceId);
+    }
+  }
+
+  private get endpoint() {
+    return `${this.baseUrl}/v1/events`;
+  }
+
+  private get localStorageAvailable() {
+    return typeof localStorage !== 'undefined';
   }
 }
