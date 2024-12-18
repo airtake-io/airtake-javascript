@@ -1,0 +1,33 @@
+{
+  "name": "@airtake/browser",
+  "version": "0.2.5",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "browser": "./dist/script.global.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/index.js",
+    "dist/index.cjs",
+    "dist/index.d.ts",
+    "dist/script.global.js"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint:typecheck": "tsc"
+  },
+  "dependencies": {
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "@airtake/tsconfig": "workspace:*",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  }
+}
