@@ -5,7 +5,7 @@ export default defineConfig([
     entry: ['src/index.ts'],
     format: ['esm', 'cjs'],
     platform: 'node',
-    target: 'es2020',
+    target: 'es2015',
     dts: true,
   },
 ]);
