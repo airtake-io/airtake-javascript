@@ -1,6 +1,6 @@
 export const populateProps = () => {
   return {
-    $library: 'node',
+    $library: 'react-native',
     $occurred_at: Date.now(),
   };
 };

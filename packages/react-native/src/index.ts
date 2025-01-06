@@ -7,4 +7,4 @@ export const Airtake = {
   },
 };
 
-export type { AirtakeOptions, IdentifyProps, Props, TrackProps } from './types';
+export type { AirtakeOptions, Props } from './types';

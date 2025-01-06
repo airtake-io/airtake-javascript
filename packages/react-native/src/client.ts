@@ -1,12 +1,17 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { nanoid } from 'nanoid/non-secure';
+import uuid from 'react-native-uuid';
+import { ACTOR_ID_KEY, DEVICE_ID_KEY } from './const';
 import { populateProps } from './props';
-import type { AirtakeOptions, IdentifyProps, TrackProps } from './types';
+import type { AirtakeOptions, Props } from './types';
 
 export class AirtakeClient {
   private enabled = true;
   private baseUrl = 'https://ingest.airtake.io';
 
   private token: string;
+  private actorId?: string | number;
+  private deviceId!: string;
 
   constructor(options: AirtakeOptions) {
     this.token = options.token;
@@ -18,12 +23,24 @@ export class AirtakeClient {
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
     }
+
+    AsyncStorage.getItem(ACTOR_ID_KEY).then((actorId) => {
+      this.actorId = actorId ?? undefined;
+    });
+
+    AsyncStorage.getItem(DEVICE_ID_KEY).then((deviceId) => {
+      if (deviceId) {
+        this.deviceId = deviceId;
+      } else {
+        this.issueDeviceId();
+      }
+    });
   }
 
-  track(event: string, props: TrackProps) {
-    const actorId = props.$actor_id ?? props.$device_id;
+  async track(event: string, props?: Props) {
+    const actorId = this.actorId ?? (await this.getDeviceId());
     if (!actorId) {
-      throw new Error('Either $actor_id or $device_id is required');
+      throw new Error('Actor ID is required');
     }
 
     this.request({
@@ -33,30 +50,37 @@ export class AirtakeClient {
       actorId,
       name: event,
       props: {
+        $actor_id: actorId,
+        $device_id: this.deviceId,
         ...populateProps(),
         ...props,
       },
     });
   }
 
-  identify(actorId: string | number, props: IdentifyProps) {
-    const { $device_id, ...rest } = props;
+  async identify(actorId: string | number, props?: Props) {
+    this.actorId = actorId;
+    AsyncStorage.setItem(ACTOR_ID_KEY, actorId.toString());
 
     this.request({
       type: 'identify',
       id: nanoid(32),
       timestamp: Date.now(),
       actorId,
-      deviceId: $device_id,
+      deviceId: await this.getDeviceId(),
       props: {
         ...populateProps(),
-        ...rest,
+        ...props,
       },
     });
   }
 
-  private get endpoint() {
-    return `${this.baseUrl}/v1/events`;
+  reset() {
+    AsyncStorage.removeItem(ACTOR_ID_KEY);
+    AsyncStorage.removeItem(DEVICE_ID_KEY);
+
+    this.actorId = undefined;
+    this.issueDeviceId();
   }
 
   private request(body: Record<string, unknown>) {
@@ -70,8 +94,27 @@ export class AirtakeClient {
       headers: {
         'Content-Type': 'application/json',
         'X-Airtake-Token': this.token,
+        'X-Airtake-CI': '1',
       },
       body: JSON.stringify(body),
     });
+  }
+
+  private async getDeviceId() {
+    if (this.deviceId) {
+      return this.deviceId;
+    }
+
+    return this.issueDeviceId();
+  }
+
+  private async issueDeviceId() {
+    this.deviceId = `$device:${uuid.v4()}`;
+    await AsyncStorage.setItem(DEVICE_ID_KEY, this.deviceId);
+    return this.deviceId;
+  }
+
+  private get endpoint() {
+    return `${this.baseUrl}/v1/events`;
   }
 }
