@@ -1,6 +1,6 @@
 {
   "name": "@airtake/browser",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -23,7 +23,8 @@
     "lint:typecheck": "tsc"
   },
   "dependencies": {
-    "nanoid": "^5.0.9"
+    "nanoid": "^5.0.9",
+    "rfc4648": "^1.5.4"
   },
   "devDependencies": {
     "@airtake/tsconfig": "workspace:*",

@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { ACTOR_ID_KEY, DEVICE_ID_KEY } from './const';
+import { extractDocument, getTarget } from './dom';
 import { populateProps } from './props';
 import type { AirtakeOptions, Props } from './types';
 
@@ -35,6 +36,10 @@ export class AirtakeClient {
       } else {
         this.issueDeviceId();
       }
+    }
+
+    if (options.experimental?.autotrack) {
+      this.observe();
     }
   }
 
@@ -112,6 +117,34 @@ export class AirtakeClient {
     if (this.localStorageAvailable) {
       localStorage.setItem(DEVICE_ID_KEY, this.deviceId);
     }
+  }
+
+  private observe() {
+    const handler = async (event: Event) => {
+      const actorId = this.actorId ?? this.deviceId;
+      if (!actorId) {
+        return;
+      }
+
+      const document = await extractDocument();
+      const target = await getTarget(event.target as Element);
+
+      this.request({
+        type: 'auto_track',
+        id: nanoid(32),
+        timestamp: Date.now(),
+        actorId,
+        target,
+        document,
+        props: {
+          $actor_id: actorId,
+          $device_id: this.deviceId,
+          ...populateProps(),
+        },
+      });
+    };
+
+    window.addEventListener('click', handler, true);
   }
 
   private get endpoint() {
